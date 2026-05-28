@@ -13,7 +13,7 @@
 
     <groupId>io.github.stellhub</groupId>
     <artifactId>stellspec-console</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.1</version>
     <name>stellspec-console</name>
     <description>StellSpec query control plane backed by Elaticsearch EQL</description>
 
