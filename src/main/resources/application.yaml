@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: stellspec-console
+
+server:
+  port: ${SERVER_PORT:18091}
+
+stellspec:
+  console:
+    eql:
+      default-index: ${STELLSPEC_CONSOLE_EQL_DEFAULT_INDEX:logs-*-*}
+      timestamp-field: ${STELLSPEC_CONSOLE_EQL_TIMESTAMP_FIELD:@timestamp}
+      event-category-field: ${STELLSPEC_CONSOLE_EQL_EVENT_CATEGORY_FIELD:event.category}
+      default-size: ${STELLSPEC_CONSOLE_EQL_DEFAULT_SIZE:100}
+      max-size: ${STELLSPEC_CONSOLE_EQL_MAX_SIZE:500}
+      default-fetch-size: ${STELLSPEC_CONSOLE_EQL_DEFAULT_FETCH_SIZE:100}
+      allow-partial-search-results: ${STELLSPEC_CONSOLE_EQL_ALLOW_PARTIAL_SEARCH_RESULTS:true}
+      allow-partial-sequence-results: ${STELLSPEC_CONSOLE_EQL_ALLOW_PARTIAL_SEQUENCE_RESULTS:true}
+
+stellflux:
+  elaticsearch:
+    endpoints:
+      - ${ELATICSEARCH_ENDPOINT:http://192.168.1.14:9200}
+    username: ${ELATICSEARCH_USERNAME:}
+    password: ${ELATICSEARCH_PASSWORD:}
+    api-key: ${ELATICSEARCH_API_KEY:}
+    connect-timeout-millis: 1000
+    socket-timeout-millis: 30000
+  opentelemetry:
+    resource:
+      service-name: stellspec-console
+    logs:
+      enabled: false
+    metrics:
+      enabled: false
+    traces:
+      enabled: false

@@ -1,43 +1,66 @@
 # StellSpec Console
 
-StellSpec Console is the query and visualization layer for StellSpec log data stored in Elasticsearch. It provides a web console and query API for searching observability logs with SQL-like query syntax.
+StellSpec Console is the query control plane for StellSpec log data stored in Elaticsearch. It exposes an HTTP API for frontend applications to execute EQL queries against the data streams written by `stellspec-service`.
 
 ## Position in the Pipeline
 
 ```text
-OpenTelemetry Collector -> Kafka -> stellspec-service -> Elasticsearch -> stellspec-console
+OpenTelemetry Collector -> Stellflow -> stellspec-service -> Elaticsearch -> stellspec-console
 ```
-
-## Language Decision
-
-Java is the better fit for the query parser and backend query engine.
-
-Reasons:
-
-- Mature parser ecosystem for SQL-like languages, especially ANTLR and Apache Calcite.
-- Strong Elasticsearch Java API Client support.
-- Easier shared domain modeling with `stellspec-service`.
-- Better alignment with Spring Boot security, API, and observability conventions.
-- Lower long-term integration cost if the service side is also Java.
-
-Go remains a good option for a lightweight query proxy or single-binary deployment, but for a SQL-like parser plus Elasticsearch query compiler, Java provides a stronger ecosystem and better extensibility.
 
 ## Responsibilities
 
-- Provide a web interface for log search and inspection.
-- Parse SQL-like log query statements.
-- Compile validated queries into Elasticsearch DSL.
-- Support filtering by service, severity, trace context, resource attributes, and time range.
-- Return paginated and sortable log results for frontend rendering.
+- Expose a frontend-facing EQL query endpoint.
+- Execute queries through `stellflux-spring-boot-starter-elaticsearch`.
+- Keep the control plane read-only and separate from the ingestion service.
+- Return normalized event and sequence results for UI rendering.
+- Provide a status endpoint for local verification.
 
-## Recommended Stack
+## Stack
 
-- Java 21+
-- Spring Boot
-- ANTLR or Apache Calcite for query parsing
-- Elasticsearch Java API Client
-- TypeScript frontend
+- Java 25
+- Spring Boot 3.5.14
+- stellflux-spring-boot-starter-http 1.0.1
+- stellflux-spring-boot-starter-elaticsearch 1.0.1
 
-## Status
+## Configuration
 
-This repository is reserved for the StellSpec log query console and SQL-like query API.
+| Environment variable | Default | Description |
+| --- | --- | --- |
+| `SERVER_PORT` | `18091` | HTTP service port. |
+| `ELATICSEARCH_ENDPOINT` | `http://192.168.1.14:9200` | Elaticsearch endpoint. |
+| `ELATICSEARCH_USERNAME` | empty | Elaticsearch username. |
+| `ELATICSEARCH_PASSWORD` | empty | Elaticsearch password. |
+| `ELATICSEARCH_API_KEY` | empty | Elaticsearch API key. |
+| `STELLSPEC_CONSOLE_EQL_DEFAULT_INDEX` | `logs-*-*` | Default index or data stream pattern. |
+| `STELLSPEC_CONSOLE_EQL_TIMESTAMP_FIELD` | `@timestamp` | EQL timestamp field. |
+| `STELLSPEC_CONSOLE_EQL_EVENT_CATEGORY_FIELD` | `event.category` | EQL event category field. |
+| `STELLSPEC_CONSOLE_EQL_DEFAULT_SIZE` | `100` | Default result size. |
+| `STELLSPEC_CONSOLE_EQL_MAX_SIZE` | `500` | Maximum result size. |
+
+## API
+
+### Status
+
+```bash
+curl http://127.0.0.1:18091/api/stellspec/console/status
+```
+
+### Query
+
+```bash
+curl -X POST http://127.0.0.1:18091/api/stellspec/console/eql/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "any where true",
+    "index": ["logs-*-*"],
+    "size": 20
+  }'
+```
+
+## Build
+
+```bash
+mvn test
+mvn package -DskipTests
+```
