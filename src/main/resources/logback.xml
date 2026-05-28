@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true" scanPeriod="60 seconds">
-    <contextName>stellspec-service</contextName>
+    <contextName>stellspec-console</contextName>
 
-    <property name="APP_NAME" value="${STELLSPEC_LOG_APP_NAME:-stellspec-service}"/>
+    <property name="APP_NAME" value="${STELLSPEC_LOG_APP_NAME:-stellspec-console}"/>
     <property name="LOG_DIR" value="${STELLSPEC_LOG_DIR:-logs}"/>
     <property name="LOG_FILE" value="${LOG_DIR}/${APP_NAME}.log"/>
     <property name="LOG_PATTERN"

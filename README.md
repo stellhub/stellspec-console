@@ -64,3 +64,61 @@ curl -X POST http://127.0.0.1:18091/api/stellspec/console/eql/query \
 mvn test
 mvn package -DskipTests
 ```
+
+After packaging, the executable Spring Boot jar is generated at:
+
+```text
+target/stellspec-console.jar
+```
+
+## Deployable Package
+
+GitHub Actions builds `stellspec-console-deploy.zip`. The zip contains:
+
+```text
+stellspec-console/
+  application.yaml
+  logback.xml
+  stellspec-console.jar
+  README.md
+```
+
+## Quick Start With External Configuration
+
+Unzip the deployable package:
+
+```bash
+unzip stellspec-console-deploy.zip
+cd stellspec-console
+```
+
+Edit `application.yaml` before startup:
+
+```yaml
+server:
+  port: 18091
+
+stellflux:
+  elaticsearch:
+    endpoints:
+      - http://127.0.0.1:9200
+```
+
+Edit `logback.xml` when the log path or log retention policy needs to change:
+
+```xml
+<property name="LOG_DIR" value="${STELLSPEC_LOG_DIR:-logs}"/>
+<property name="APP_NAME" value="${STELLSPEC_LOG_APP_NAME:-stellspec-console}"/>
+```
+
+Start the jar with the external configuration files in the same directory:
+
+```bash
+java -Dlogging.config=./logback.xml -jar stellspec-console.jar --spring.config.location=./application.yaml
+```
+
+Verify the service:
+
+```bash
+curl http://127.0.0.1:18091/api/stellspec/console/status
+```

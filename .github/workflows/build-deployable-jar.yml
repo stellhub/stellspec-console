@@ -1,0 +1,47 @@
+name: Build Deployable Jar
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Build executable jar
+        run: mvn -B clean package
+
+      - name: Assemble deployable zip
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle_dir="target/deploy/stellspec-console"
+          mkdir -p "${bundle_dir}"
+          cp target/stellspec-console.jar "${bundle_dir}/stellspec-console.jar"
+          cp src/main/resources/application.yaml "${bundle_dir}/application.yaml"
+          cp src/main/resources/logback.xml "${bundle_dir}/logback.xml"
+          cp README.md "${bundle_dir}/README.md"
+          cd target/deploy
+          zip -r stellspec-console-deploy.zip stellspec-console
+
+      - name: Upload deployable zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: stellspec-console-deploy
+          path: target/deploy/stellspec-console-deploy.zip
+          if-no-files-found: error
