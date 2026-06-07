@@ -1,124 +1,118 @@
 # StellSpec Console
 
-StellSpec Console is the query control plane for StellSpec log data stored in Elaticsearch. It exposes an HTTP API for frontend applications to execute EQL queries against the data streams written by `stellspec-service`.
+`stellspec-console` 是 StellSpec 日志平台的查询控制面服务，面向前端控制台提供日志查询、结果归一和状态检查能力。
 
-## Position in the Pipeline
+## 项目概述
 
-```text
-OpenTelemetry Collector -> Stellflow -> stellspec-service -> Elaticsearch -> stellspec-console
+本项目负责读取由 `stellspec-service` 写入的日志数据，并为前端应用提供统一查询 API。它应保持只读定位，与日志摄取链路解耦。
+
+## 当前状态
+
+| 项目 | 说明 |
+| --- | --- |
+| 稳定性 | 开发中 |
+| 服务类型 | 日志查询控制面 |
+| 技术栈 | Java、Spring Boot、Stellflux |
+| 维护方 | StellHub |
+
+## 解决什么问题
+
+- 为前端控制台提供日志查询 API。
+- 执行日志数据查询并返回标准结果。
+- 将查询服务与写入服务解耦。
+- 提供状态检查接口。
+
+## 不解决什么问题
+
+- 不负责日志采集和写入。
+- 不直接实现前端页面。
+- 不替代底层搜索存储。
+
+## 核心能力
+
+| 能力 | 说明 |
+| --- | --- |
+| 查询 API | 面向前端提供查询入口 |
+| 结果归一 | 返回统一事件结果 |
+| 只读控制面 | 与写入链路隔离 |
+| 状态检查 | 暴露运行状态 |
+
+## 架构说明
+
+```mermaid
+flowchart LR
+    Frontend[Frontend] --> Console[StellSpec Console]
+    Console --> Store[Search Storage]
 ```
 
-## Responsibilities
+## 快速开始
 
-- Expose a frontend-facing EQL query endpoint.
-- Execute queries through `stellflux-spring-boot-starter-elaticsearch`.
-- Keep the control plane read-only and separate from the ingestion service.
-- Return normalized event and sequence results for UI rendering.
-- Provide a status endpoint for local verification.
+```bash
+mvn clean test
+mvn clean package -DskipTests
+mvn spring-boot:run
+```
 
-## Stack
+## 配置说明
 
-- Java 25
-- Spring Boot 3.5.14
-- stellflux-spring-boot-starter-http 1.0.1
-- stellflux-spring-boot-starter-elaticsearch 1.0.1
-
-## Configuration
-
-| Environment variable | Default | Description |
+| 配置项 | 是否必填 | 说明 |
 | --- | --- | --- |
-| `SERVER_PORT` | `18091` | HTTP service port. |
-| `ELATICSEARCH_ENDPOINT` | `http://192.168.1.14:9200` | Elaticsearch endpoint. |
-| `ELATICSEARCH_USERNAME` | empty | Elaticsearch username. |
-| `ELATICSEARCH_PASSWORD` | empty | Elaticsearch password. |
-| `ELATICSEARCH_API_KEY` | empty | Elaticsearch API key. |
-| `STELLSPEC_CONSOLE_EQL_DEFAULT_INDEX` | `logs-*-*` | Default index or data stream pattern. |
-| `STELLSPEC_CONSOLE_EQL_TIMESTAMP_FIELD` | `@timestamp` | EQL timestamp field. |
-| `STELLSPEC_CONSOLE_EQL_EVENT_CATEGORY_FIELD` | `event.category` | EQL event category field. |
-| `STELLSPEC_CONSOLE_EQL_DEFAULT_SIZE` | `100` | Default result size. |
-| `STELLSPEC_CONSOLE_EQL_MAX_SIZE` | `500` | Maximum result size. |
+| server.port | 否 | HTTP 服务端口 |
+| search.endpoint | 是 | 搜索存储地址 |
+| stellspec.query.timeout | 否 | 查询超时时间 |
 
-## API
-
-### Status
+## 本地开发
 
 ```bash
-curl http://127.0.0.1:18091/api/stellspec/console/status
+mvn clean verify
 ```
 
-### Query
+## 版本与升级
 
-```bash
-curl -X POST http://127.0.0.1:18091/api/stellspec/console/eql/query \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "any where true",
-    "index": ["logs-*-*"],
-    "size": 20
-  }'
-```
+- `MAJOR`：不兼容 API 或返回结构变更。
+- `MINOR`：向后兼容的新能力。
+- `PATCH`：向后兼容的问题修复。
 
-## Build
+## 可观测性
 
-```bash
-mvn test
-mvn package -DskipTests
-```
+| 类型 | 名称 | 说明 |
+| --- | --- | --- |
+| Metric | stellspec_query_total | 查询次数 |
+| Metric | stellspec_query_latency | 查询耗时 |
+| Log | QUERY_FAILED | 查询失败 |
 
-After packaging, the executable Spring Boot jar is generated at:
+## 故障排查
+
+### 前端查询无结果
+
+1. 检查搜索存储地址是否可访问。
+2. 检查查询条件是否正确。
+3. 检查写入服务是否已经产生数据。
+
+## 安全说明
+
+生产环境配置不应直接提交到仓库，查询接口应按平台规范接入统一访问控制。
+
+## 目录结构
 
 ```text
-target/stellspec-console.jar
+.
+├── src/            # 服务源码
+├── docs/           # 扩展文档
+├── pom.xml         # Maven 构建文件
+└── README.md       # 项目说明
 ```
 
-## Deployable Package
+## 贡献规范
 
-GitHub Actions builds `stellspec-console-deploy.zip`. The zip contains:
+- API 返回结构变更必须说明兼容性影响。
+- 查询逻辑变更必须补充测试。
+- 行为变更必须同步更新 README 或 docs。
 
-```text
-stellspec-console/
-  application.yaml
-  logback.xml
-  stellspec-console.jar
-  README.md
-```
+## 支持
 
-## Quick Start With External Configuration
+由 StellHub 维护。建议通过 GitHub Issues 记录问题、需求和设计讨论。
 
-Unzip the deployable package:
+## 许可证
 
-```bash
-unzip stellspec-console-deploy.zip
-cd stellspec-console
-```
-
-Edit `application.yaml` before startup:
-
-```yaml
-server:
-  port: 18091
-
-stellflux:
-  elaticsearch:
-    endpoints:
-      - http://127.0.0.1:9200
-```
-
-Edit `logback.xml` when the log path or log retention policy needs to change:
-
-```xml
-<property name="LOG_DIR" value="${STELLSPEC_LOG_DIR:-logs}"/>
-<property name="APP_NAME" value="${STELLSPEC_LOG_APP_NAME:-stellspec-console}"/>
-```
-
-Start the jar with the external configuration files in the same directory:
-
-```bash
-java -Dlogging.config=./logback.xml -jar stellspec-console.jar --spring.config.location=./application.yaml
-```
-
-Verify the service:
-
-```bash
-curl http://127.0.0.1:18091/api/stellspec/console/status
-```
+以仓库内 `LICENSE` 文件为准。
